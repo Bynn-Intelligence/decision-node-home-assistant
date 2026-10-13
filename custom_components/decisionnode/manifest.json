@@ -1,0 +1,13 @@
+{
+  "domain": "decisionnode",
+  "name": "DecisionNode",
+  "after_dependencies": ["camera", "mqtt"],
+  "codeowners": [],
+  "config_flow": true,
+  "documentation": "https://github.com/Bynn-Intelligence/decision-node-home-assistant",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/Bynn-Intelligence/decision-node-home-assistant/issues",
+  "requirements": ["bynn-decisionnode==0.3.2"],
+  "version": "0.1.0"
+}

@@ -1,0 +1,90 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect DecisionNode",
+        "description": "DecisionNode is a decision engine. Paste an API key from your DecisionNode console.",
+        "data": {
+          "api_key": "API key",
+          "model": "Model"
+        },
+        "data_description": {
+          "api_key": "Kept in this integration's configuration and never written to the log.",
+          "model": "decisionnode-moe, or decisionnode-flash for the fast, lower-cost model."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Reconnect DecisionNode",
+        "description": "DecisionNode refused the API key. Paste a valid key.",
+        "data": {
+          "api_key": "API key"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "DecisionNode refused this API key.",
+      "cannot_connect": "Could not reach DecisionNode.",
+      "unknown": "Unexpected error."
+    },
+    "abort": {
+      "already_configured": "This API key is already set up.",
+      "reauth_successful": "The API key was updated."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Standing questions and Frigate",
+        "description": "Standing questions are asked on a schedule and show up as sensors. The Frigate trigger asks its questions when Frigate detects something.",
+        "data": {
+          "standing_questions": "Standing questions",
+          "frigate": "Frigate trigger"
+        }
+      }
+    },
+    "error": {
+      "standing_not_a_list": "Standing questions must be a list.",
+      "standing_invalid": "A standing question needs a name, a question with a type and instructions, and at most one of camera and image_url; interval is at least 10 seconds.",
+      "standing_duplicate_name": "Two standing questions have the same name.",
+      "standing_type": "A standing question is a truth, choice, score or number question.",
+      "frigate_invalid": "The Frigate settings are not valid.",
+      "frigate_incomplete": "The Frigate trigger needs frigate_url and at least one question."
+    }
+  },
+  "services": {
+    "decide": {
+      "name": "Decide",
+      "description": "Ask DecisionNode one or more questions about a camera's picture, an image or a state.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "The DecisionNode account to use. Left out: the first one."
+        },
+        "camera_entity_id": {
+          "name": "Camera",
+          "description": "The camera whose current picture is decided."
+        },
+        "image_url": {
+          "name": "Image URL",
+          "description": "An https URL of a picture, fetched by DecisionNode."
+        },
+        "image_path": {
+          "name": "Image path",
+          "description": "A picture file Home Assistant may read (allowlist_external_dirs)."
+        },
+        "questions": {
+          "name": "Questions",
+          "description": "Questions by id, each with a type (truth, choice, score, number, point, box) and instructions, as the DecisionNode API takes them."
+        },
+        "state": {
+          "name": "State",
+          "description": "Text or data the questions are about, beside the picture."
+        },
+        "model": {
+          "name": "Model",
+          "description": "The model for this call. Left out: the account's model."
+        }
+      }
+    }
+  }
+}

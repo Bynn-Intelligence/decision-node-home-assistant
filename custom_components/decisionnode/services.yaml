@@ -1,0 +1,33 @@
+decide:
+  fields:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: decisionnode
+    camera_entity_id:
+      example: camera.front_door
+      selector:
+        entity:
+          domain: camera
+    image_url:
+      example: "https://files.example.com/door.jpg"
+      selector:
+        text:
+    image_path:
+      example: /config/www/door.jpg
+      selector:
+        text:
+    questions:
+      required: true
+      example: >-
+        {"package": {"type": "truth", "instructions": "Is a package on the doorstep?"}}
+      selector:
+        object:
+    state:
+      example: "Front door, evening"
+      selector:
+        object:
+    model:
+      example: decisionnode-moe
+      selector:
+        text:

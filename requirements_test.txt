@@ -1,0 +1,2 @@
+pytest-homeassistant-custom-component==0.13.372
+bynn-decisionnode==0.3.2
