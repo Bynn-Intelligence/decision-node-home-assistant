@@ -20,7 +20,10 @@ jobs:
           persist-credentials: false
       - uses: home-assistant/actions/hassfest@50baf3a307f87100cf550d4ae127746595030d5d # master, 2026-10-12
 
+  # HACS reads the manifest and hacs.json from the public file host, so this check can
+  # only pass on a public repository; while the repository is private it is skipped.
   hacs:
+    if: github.event.repository.visibility == 'public'
     runs-on: ubuntu-latest
     steps:
       - uses: hacs/action@d556e736723344f83838d08488c983a15381059a # 22.5.0
