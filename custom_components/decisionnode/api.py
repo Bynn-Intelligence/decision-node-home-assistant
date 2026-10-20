@@ -48,6 +48,7 @@ class Asker:
         images: list[Image] | None = None,
         state: Any = None,
         model: str | None = None,
+        boosters: list[Any] | None = None,
     ) -> Decision:
         async with self._gate:
             async with self._spacing:
@@ -58,6 +59,8 @@ class Asker:
             kwargs: dict[str, Any] = {"questions": dict(questions), "images": images or None, "model": model}
             if state is not None:
                 kwargs["state"] = state
+            if boosters:
+                kwargs["boosters"] = boosters
             return await self.client.decide(**kwargs)
 
 
@@ -82,14 +85,55 @@ def url_image(url: str) -> Image:
     return Image("image", url=url)
 
 
+def knowledge_booster(knowledge: Mapping[str, Any] | None) -> list[dict[str, Any]] | None:
+    """The request's ``boosters`` for a ``knowledge`` setting, or None without one.
+
+    The setting is the booster's options with ``require`` beside them; every option is
+    sent as given and judged by the API, so options it adds later work unchanged.
+    """
+    if not knowledge:
+        return None
+    options = {k: v for k, v in knowledge.items() if k != "require"}
+    booster: dict[str, Any] = {"name": "knowledge", "options": options}
+    if knowledge.get("require"):
+        booster["require"] = True
+    return [booster]
+
+
 def decision_dict(decision: Decision) -> dict[str, Any]:
-    """The decision as plain data: the answers exactly as the API sent them."""
+    """The decision as plain data: the answers, and the boosters' evidence when the
+    request named any, exactly as the API sent them."""
     raw = decision.raw if isinstance(decision.raw, dict) else {}
     answers = raw.get("answers") if isinstance(raw.get("answers"), dict) else {}
     usage = raw.get("usage") if isinstance(raw.get("usage"), dict) else {}
-    return {
+    result = {
         "model": decision.model,
         "request_id": decision.request_id,
         "answers": answers,
         "usage": usage,
+    }
+    if isinstance(raw.get("evidence"), dict):
+        result["evidence"] = raw["evidence"]
+    return result
+
+
+PASSAGE_ATTRIBUTES = ("n", "pinned", "title", "heading", "reference", "item", "chunk", "score", "text")
+
+
+def knowledge_attributes(result: Mapping[str, Any] | None) -> dict[str, Any]:
+    """The knowledge reading of a decision as small entity attributes: its status and the
+    cited passages, each with only the fields that say where it comes from (and its
+    text when the request asked for it). Empty when the decision has no reading."""
+    evidence = (result or {}).get("evidence")
+    entry = evidence.get("knowledge") if isinstance(evidence, dict) else None
+    if not isinstance(entry, dict):
+        return {}
+    results = entry.get("results")
+    reading = results[0] if isinstance(results, list) and results and isinstance(results[0], dict) else {}
+    passages = reading.get("passages") if isinstance(reading.get("passages"), list) else []
+    return {
+        "knowledge_status": entry.get("status"),
+        "knowledge_passages": [
+            {k: p[k] for k in PASSAGE_ATTRIBUTES if k in p} for p in passages if isinstance(p, dict)
+        ],
     }

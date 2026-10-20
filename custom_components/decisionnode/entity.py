@@ -13,7 +13,7 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity, DataUpdateCoordinator, UpdateFailed
 
-from .api import async_camera_image, decision_dict, url_image
+from .api import async_camera_image, decision_dict, knowledge_attributes, knowledge_booster, url_image
 from .const import DOMAIN, EVENT_DECISION
 
 _LOGGER = logging.getLogger(__name__)
@@ -43,7 +43,10 @@ class StandingCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             elif url := standing.get("image_url"):
                 images.append(url_image(url))
             decision = await self.config_entry.runtime_data.asker.decide(
-                {QUESTION_ID: standing["question"]}, images, standing.get("state")
+                {QUESTION_ID: standing["question"]},
+                images,
+                standing.get("state"),
+                boosters=knowledge_booster(standing.get("knowledge")),
             )
         except AuthenticationError as err:
             raise ConfigEntryAuthFailed("DecisionNode refused the API key") from err
@@ -87,4 +90,5 @@ class StandingEntity(CoordinatorEntity[StandingCoordinator]):
             attrs.update({k: v for k, v in self.answer.items() if k != "type"})
         if self.coordinator.data:
             attrs["model"] = self.coordinator.data.get("model")
+            attrs.update(knowledge_attributes(self.coordinator.data))
         return attrs

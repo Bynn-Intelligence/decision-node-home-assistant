@@ -48,15 +48,48 @@ class MockAPI:
                     answers[qid] = {"type": "choice", "choice": first, "confidence": 0.8, "probabilities": {first: 0.8}}
                 else:
                     answers[qid] = {"type": "number", "number": 3, "expected": 3.1, "confidence": 0.7, "probabilities": {"3": 0.7}}
-            return httpx.Response(
-                200,
-                json={"model": "decisionnode-moe-0.9.0", "answers": answers, "usage": {"input_tokens": 10, "output_tokens": 0}},
-                headers={"x-request-id": "req_test"},
-            )
+            out = {"model": "decisionnode-moe-0.9.0", "answers": answers, "usage": {"input_tokens": 10, "output_tokens": 0}}
+            knowledge = next((b for b in body.get("boosters", []) if isinstance(b, dict) and b.get("name") == "knowledge"), None)
+            if knowledge is not None:
+                out["evidence"] = {"knowledge": knowledge_evidence(knowledge["options"])}
+            return httpx.Response(200, json=out, headers={"x-request-id": "req_test"})
         return httpx.Response(404, json={"detail": "Not found"})
 
     def decides(self) -> list[dict[str, Any]]:
         return [json.loads(r.content) for r in self.requests if r.url.path == "/v1/decide"]
+
+
+def knowledge_evidence(options: dict[str, Any]) -> dict[str, Any]:
+    """A knowledge reading as the API sends it: one pinned rule and one retrieved passage."""
+    passage = {"item": "itm_manual", "reference": "dishwasher-manual", "title": "Dishwasher manual", "heading": "Error codes",
+               "chunk": 7, "byte_start": 5120, "byte_end": 5604, "tokens": 104, "score": 0.8123, "lexical": False, "rendered": True}
+    pin = {"n": 1, "pinned": True, "item": "itm_rules", "reference": "house-rules", "title": "House rules", "heading": "Kitchen",
+           "chunk": 0, "byte_start": 0, "byte_end": 310, "tokens": 64, "score": None, "lexical": False, "rendered": True}
+    if options.get("include_text"):
+        pin["text"] = "Run the dishwasher only after 22:00."
+        passage["text"] = "E24: the drain is blocked."
+    return {
+        "version": "knowledge-v1",
+        "status": "ok",
+        "latency_ms": 120,
+        "billed_calls": 1,
+        "results": [
+            {
+                "collection": options["collection"],
+                "collection_name": "Home",
+                "corpus": {"version": 3},
+                "query": {"source": "auto", "tokens": 40},
+                "budget": {"mode": "auto", "tokens": 168, "entry": "short", "cause": None},
+                "scope": {"key": "room", "value": options.get("scope")},
+                "warnings": [],
+                "passages": [pin, {"n": 2, "pinned": False, **passage}],
+                "omitted": {"below_min_score": 0, "per_item_cap": 0, "over_budget": 0, "pinned_filtered": 0},
+                "pending_items": 0,
+                "search": {"plan": "exact", "candidates": 12, "fallback": False},
+                "truncated": False,
+            }
+        ],
+    }
 
 
 @pytest.fixture

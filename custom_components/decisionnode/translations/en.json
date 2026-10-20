@@ -35,7 +35,7 @@
     "step": {
       "init": {
         "title": "Standing questions and Frigate",
-        "description": "Standing questions are asked on a schedule and show up as sensors. The Frigate trigger asks its questions when Frigate detects something.",
+        "description": "Standing questions are asked on a schedule and show up as sensors. The Frigate trigger asks its questions when Frigate detects something. Either can name a knowledge base under knowledge.",
         "data": {
           "standing_questions": "Standing questions",
           "frigate": "Frigate trigger"
@@ -44,10 +44,10 @@
     },
     "error": {
       "standing_not_a_list": "Standing questions must be a list.",
-      "standing_invalid": "A standing question needs a name, a question with a type and instructions, and at most one of camera and image_url; interval is at least 10 seconds.",
+      "standing_invalid": "A standing question needs a name, a question with a type and instructions, and at most one of camera and image_url; interval is at least 10 seconds; knowledge needs a collection.",
       "standing_duplicate_name": "Two standing questions have the same name.",
       "standing_type": "A standing question is a truth, choice, score or number question.",
-      "frigate_invalid": "The Frigate settings are not valid.",
+      "frigate_invalid": "The Frigate settings are not valid; knowledge needs a collection.",
       "frigate_incomplete": "The Frigate trigger needs frigate_url and at least one question."
     }
   },
@@ -83,6 +83,10 @@
         "model": {
           "name": "Model",
           "description": "The model for this call. Left out: the account's model."
+        },
+        "knowledge": {
+          "name": "Knowledge",
+          "description": "The knowledge base the decision applies: collection (its id), and optionally scope, top_k, require and the other knowledge options. The passages it cites come back in evidence."
         }
       }
     }

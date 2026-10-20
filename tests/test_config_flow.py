@@ -58,3 +58,25 @@ async def test_options_validate_standing_questions(hass: HomeAssistant, mock_api
         {"standing_questions": [{"name": "Package", "question": {"type": "truth", "instructions": "A package?"}, "interval": 5}]},
     )
     assert result["errors"] == {"base": "standing_invalid"}
+
+
+async def test_options_knowledge_needs_a_collection(hass: HomeAssistant, mock_api: Any) -> None:
+    entry = MockConfigEntry(domain=DOMAIN, data={CONF_API_KEY: GOOD_KEY, "model": "decisionnode-moe"})
+    entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(entry.entry_id)
+    question = {"name": "Dishwasher", "question": {"type": "truth", "instructions": "Call a technician?"}}
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"standing_questions": [{**question, "knowledge": {"scope": "kitchen"}}]}
+    )
+    assert result["errors"] == {"base": "standing_invalid"}
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"standing_questions": [], "frigate": {"knowledge": {"top_k": 2}}}
+    )
+    assert result["errors"] == {"base": "frigate_invalid"}
+    knowledge = {"collection": "col_3f6c1a9e0b2d4c7f8a1e5d9b2c4f6a80", "scope": "kitchen", "top_k": 2, "require": True}
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"standing_questions": [{**question, "knowledge": knowledge}]}
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert entry.options["standing_questions"][0]["knowledge"] == knowledge

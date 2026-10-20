@@ -23,6 +23,14 @@ QUESTION = vol.Schema(
     extra=vol.ALLOW_EXTRA,
 )
 
+# The knowledge booster's setting: a knowledge base's id, require, and its other options
+# (scope, query, top_k, max_tokens, pinned, min_score, match, filter, include_text) as
+# the API takes them. The API judges the options, so they are passed through as given.
+KNOWLEDGE = vol.Schema(
+    {vol.Required("collection"): cv.string, vol.Optional("require"): cv.boolean},
+    extra=vol.ALLOW_EXTRA,
+)
+
 STANDING = vol.Schema(
     {
         vol.Required("name"): vol.All(cv.string, vol.Length(min=1, max=64)),
@@ -32,6 +40,7 @@ STANDING = vol.Schema(
         vol.Required("question"): QUESTION,
         vol.Optional("interval", default=DEFAULT_INTERVAL): vol.All(vol.Coerce(int), vol.Range(min=MIN_INTERVAL)),
         vol.Optional("threshold", default=DEFAULT_THRESHOLD): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
+        vol.Optional("knowledge"): KNOWLEDGE,
     }
 )
 
@@ -46,6 +55,7 @@ FRIGATE = vol.Schema(
         vol.Optional("cooldown", default=DEFAULT_FRIGATE_COOLDOWN): vol.All(vol.Coerce(int), vol.Range(min=0)),
         vol.Optional("state"): vol.Any(str, dict, list),
         vol.Optional("questions", default={}): {cv.string: QUESTION},
+        vol.Optional("knowledge"): KNOWLEDGE,
     }
 )
 

@@ -15,8 +15,17 @@ from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 
-from .api import Asker, async_camera_image, async_create_client, async_path_image, decision_dict, url_image
+from .api import (
+    Asker,
+    async_camera_image,
+    async_create_client,
+    async_path_image,
+    decision_dict,
+    knowledge_booster,
+    url_image,
+)
 from .const import CONF_MODEL, DEFAULT_MODEL, DOMAIN, EVENT_DECISION, SERVICE_DECIDE
+from .options import KNOWLEDGE
 
 PLATFORMS = [Platform.BINARY_SENSOR, Platform.SENSOR]
 
@@ -29,6 +38,7 @@ ATTR_IMAGE_PATH = "image_path"
 ATTR_QUESTIONS = "questions"
 ATTR_STATE = "state"
 ATTR_MODEL = "model"
+ATTR_KNOWLEDGE = "knowledge"
 
 DECIDE_SCHEMA = vol.Schema(
     {
@@ -39,6 +49,7 @@ DECIDE_SCHEMA = vol.Schema(
         vol.Required(ATTR_QUESTIONS): vol.All(dict, vol.Length(min=1)),
         vol.Optional(ATTR_STATE): vol.Any(str, dict, list),
         vol.Optional(ATTR_MODEL): cv.string,
+        vol.Optional(ATTR_KNOWLEDGE): KNOWLEDGE,
     }
 )
 
@@ -68,7 +79,11 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             images.append(await async_path_image(hass, path))
         try:
             decision = await entry.runtime_data.asker.decide(
-                call.data[ATTR_QUESTIONS], images, call.data.get(ATTR_STATE), call.data.get(ATTR_MODEL)
+                call.data[ATTR_QUESTIONS],
+                images,
+                call.data.get(ATTR_STATE),
+                call.data.get(ATTR_MODEL),
+                boosters=knowledge_booster(call.data.get(ATTR_KNOWLEDGE)),
             )
         except AuthenticationError as err:
             entry.async_start_reauth(hass)

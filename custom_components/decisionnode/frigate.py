@@ -13,7 +13,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 
-from .api import decision_dict
+from .api import decision_dict, knowledge_booster
 from .const import CONF_FRIGATE, EVENT_DECISION
 from .sensor import FRIGATE_SIGNAL
 
@@ -76,7 +76,10 @@ class FrigateTrigger:
             return
         try:
             decision = await self.entry.runtime_data.asker.decide(
-                self.frigate["questions"], [Image("snapshot", data=picture)], self.frigate.get("state")
+                self.frigate["questions"],
+                [Image("snapshot", data=picture)],
+                self.frigate.get("state"),
+                boosters=knowledge_booster(self.frigate.get("knowledge")),
             )
         except DecisionNodeError as err:
             _LOGGER.warning("DecisionNode could not decide Frigate event %s: %s", event_id, err.error_type or err.status)

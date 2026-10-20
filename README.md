@@ -12,6 +12,8 @@ number. Use the answers in automations, as sensors, or on a Frigate detection.
   sensor (yes or no) or a sensor (a choice, a score or a number).
 - A **Frigate trigger**: a person or car detection asks your questions about that event's
   snapshot.
+- **Knowledge**: any of them can apply your own documents, such as house rules or appliance
+  manuals, and shows the passages a decision cites.
 
 ## Install
 
@@ -173,12 +175,98 @@ automation:
           message: A courier is at the front door.
 ```
 
+## Knowledge
+
+A knowledge base holds your own documents: house rules, appliance manuals, the care notes
+for a plant or a pet. Name it on a decision and DecisionNode finds the passages that apply
+and decides by them, and the response shows which passages it used.
+
+Create the knowledge base and add documents in the DecisionNode console, or with the `dn`
+command line tool. A scope key lets one knowledge base hold several rooms or devices, and a
+decision names the one it is about:
+
+```sh
+dn collections create "Home" --type text --scope-key room
+dn documents add col_3f6c... house-rules.md --pinned
+dn documents add col_3f6c... dishwasher-manual.pdf --metadata '{"room": "kitchen"}'
+dn documents add col_3f6c... thermostat-manual.pdf --metadata '{"room": "hallway"}'
+```
+
+A document without the scope key in its metadata applies to every room. A pinned document is
+always given to the decision, so pin a rule that must always apply. Documents are processed
+in the background; a decision uses those that are ready.
+
+On the decide action, `knowledge` takes the knowledge base's id as `collection` and, as
+needed, `scope`, `top_k` (how many passages, 4 by default), `require` and the other
+knowledge options (`query`, `max_tokens`, `pinned`, `min_score`, `match`, `filter`,
+`include_text`):
+
+```yaml
+action: decisionnode.decide
+data:
+  state: "Dishwasher display: E24, water left in the bottom"
+  questions:
+    technician:
+      type: truth
+      instructions: Does the manual say this needs a technician?
+  knowledge:
+    collection: col_3f6c1a9e0b2d4c7f8a1e5d9b2c4f6a80
+    scope: kitchen
+    top_k: 4
+    require: true
+response_variable: decision
+```
+
+The response then carries `evidence.knowledge` exactly as the API sends it. Its one result
+lists the `passages` the decision cites, pinned ones first:
+
+```yaml
+evidence:
+  knowledge:
+    status: ok
+    results:
+      - scope: { key: room, value: kitchen }
+        passages:
+          - { n: 1, pinned: true, title: House rules, heading: Kitchen, item: itm_..., chunk: 0, byte_start: 0, byte_end: 310, score: null }
+          - { n: 2, pinned: false, title: Dishwasher manual, heading: Error codes, item: itm_..., chunk: 7, byte_start: 5120, byte_end: 5604, score: 0.8123 }
+```
+
+`item` and `chunk` name the document and the part of it; `byte_start` and `byte_end` are
+UTF-8 byte offsets into the document's stored text, which the console and
+`dn documents get --text` show. A passage's `text` is included only when you set
+`include_text: true`, which needs a full access key.
+
+Standing questions and the Frigate trigger take the same `knowledge` setting in the
+**Configure** dialog:
+
+```yaml
+- name: Dishwasher needs a technician
+  state: "Dishwasher display: E24"
+  question:
+    type: truth
+    instructions: Does the manual say this needs a technician?
+  knowledge:
+    collection: col_3f6c1a9e0b2d4c7f8a1e5d9b2c4f6a80
+    scope: kitchen
+```
+
+The entity then shows `knowledge_status` and `knowledge_passages` (each passage's `n`,
+`pinned`, `title`, `heading`, `reference`, `item`, `chunk` and `score`) as attributes; the
+sensor **Last Frigate decision** does the same for the Frigate trigger.
+
+With `require: true`, a decision that could not read the knowledge base fails instead of
+deciding without it: the action raises an error naming the reason, such as
+`knowledge_collection_empty` when no document is ready, and a standing question shows as
+unavailable until the next check. Without it, the decision runs and `evidence.knowledge`
+says why no passage was cited.
+
 ## Privacy
 
 To be decided, a picture (a camera's current image, a Frigate snapshot or the image you
 name) is sent to the DecisionNode API with your questions. Nothing is sent until a
 decide action runs, a standing question is due or a Frigate event matches your labels.
-The DecisionNode terms and privacy policy cover what happens to a request:
+A knowledge base stays in your DecisionNode workspace; a decision sends only its id and
+options. The DecisionNode terms and privacy policy cover what happens to a request:
 https://decisionnode.com.
 
 ## Development

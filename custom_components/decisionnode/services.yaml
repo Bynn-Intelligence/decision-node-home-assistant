@@ -31,3 +31,8 @@ decide:
       example: decisionnode-moe
       selector:
         text:
+    knowledge:
+      example: >-
+        {"collection": "col_3f6c1a9e0b2d4c7f8a1e5d9b2c4f6a80", "scope": "kitchen", "top_k": 4, "require": true}
+      selector:
+        object:

@@ -9,6 +9,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
+from .api import knowledge_attributes
 from .const import CONF_FRIGATE, CONF_STANDING, DOMAIN
 from .entity import StandingCoordinator, StandingEntity
 
@@ -64,4 +65,5 @@ class FrigateDecisionSensor(SensorEntity):
         self._attr_extra_state_attributes = {
             k: data.get(k) for k in ("camera", "label", "model", "answers", "request_id")
         }
+        self._attr_extra_state_attributes.update(knowledge_attributes(data))
         self.async_write_ha_state()
