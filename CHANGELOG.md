@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.0 (unreleased)
+## 0.2.0
 
 - **Knowledge**: the decide action, standing questions and the Frigate trigger take a
   `knowledge` setting that names a knowledge base by its id, with `scope`, `top_k`,
